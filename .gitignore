@@ -1,0 +1,5 @@
+.env
+seen_orders.json
+debug/
+__pycache__/
+*.pyc
