@@ -1,0 +1,7 @@
+.env
+seen_orders.json
+seen_inquiries.json
+debug/
+__pycache__/
+*.pyc
+.venv/
