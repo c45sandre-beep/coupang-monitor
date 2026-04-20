@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>비즈니스 대시보드</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #050e1a; font-family: 'Noto Sans KR', sans-serif; color: #e0f4ff; min-height: 100vh; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    .scanline { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,200,255,0.012) 2px, rgba(0,200,255,0.012) 4px); pointer-events: none; z-index: 0; }
+    .dash { max-width: 960px; margin: 0 auto; padding: 1.5rem; position: relative; z-index: 1; }
+
+    .header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1.5rem; border-bottom: 1px solid #0cf; padding-bottom: 12px; }
+    .header-title { font-size: 17px; font-weight: 500; color: #0cf; letter-spacing: 0.08em; }
+    .header-sub { font-size: 11px; color: #4a9fb0; margin-top: 4px; letter-spacing: 0.04em; }
+    .pulse { animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
+    .date-nav { display: flex; align-items: center; gap: 8px; }
+    .date-nav button { background: transparent; border: 1px solid #0cf; border-radius: 4px; width: 26px; height: 26px; cursor: pointer; color: #0cf; font-size: 11px; }
+    .date-nav button:hover { background: rgba(0,204,255,0.1); }
+    .date-nav span { font-size: 13px; color: #0cf; font-family: 'JetBrains Mono', monospace; }
+
+    .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 10px; }
+    .kpi { background: #071828; border: 1px solid #0a4060; border-radius: 8px; padding: 14px 16px; position: relative; overflow: hidden; }
+    .kpi::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: #0cf; opacity: 0.5; }
+    .kpi::after { content: ''; position: absolute; bottom: 0; right: 0; width: 24px; height: 24px; border-right: 1px solid #0cf; border-bottom: 1px solid #0cf; opacity: 0.25; }
+    .kpi-label { font-size: 11px; color: #4a9fb0; margin-bottom: 8px; font-weight: 400; }
+    .kpi-value { font-size: 26px; line-height: 1; font-family: 'JetBrains Mono', monospace; font-weight: 500; }
+    .kpi-change { display: flex; align-items: center; gap: 5px; margin-top: 8px; font-size: 11px; }
+    .up { color: #00e5a0; } .down { color: #ff4466; }
+    .tri-up { display: inline-block; width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-bottom: 6px solid #00e5a0; }
+    .tri-down { display: inline-block; width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-top: 6px solid #ff4466; }
+
+    .row2 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+    .status-card { background: #071828; border: 1px solid #0a4060; border-radius: 8px; padding: 14px 16px; position: relative; overflow: hidden; }
+    .status-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: #0cf; opacity: 0.35; }
+    .status-label { font-size: 11px; color: #4a9fb0; margin-bottom: 8px; }
+    .status-value { font-size: 24px; color: #e0f4ff; font-family: 'JetBrains Mono', monospace; font-weight: 500; }
+    .status-unit { font-size: 13px; color: #4a9fb0; font-family: 'Noto Sans KR', sans-serif; font-weight: 400; }
+    .dot-row { display: flex; gap: 12px; margin-top: 8px; }
+    .dot-item { display: flex; align-items: center; gap: 5px; font-size: 11px; }
+    .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .dot.g { background: #00e5a0; box-shadow: 0 0 5px #00e5a0; }
+    .dot.a { background: #f0a500; box-shadow: 0 0 5px #f0a500; }
+    .dot.r { background: #ff4466; box-shadow: 0 0 5px #ff4466; }
+    .bar-bg { height: 4px; background: #0a2030; border-radius: 2px; overflow: hidden; margin: 8px 0 4px; }
+    .bar-fill { height: 100%; background: #0cf; border-radius: 2px; }
+
+    .tabs { display: flex; border-bottom: 1px solid #0a4060; margin-bottom: 12px; }
+    .tab { padding: 8px 18px; font-size: 12px; color: #4a9fb0; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; font-weight: 400; }
+    .tab.active { color: #0cf; border-bottom-color: #0cf; font-weight: 500; }
+    .tab:hover { color: #8dd8e8; }
+
+    .table-wrap { background: #071828; border: 1px solid #0a4060; border-radius: 8px; overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
+    th { text-align: left; padding: 10px 14px; font-size: 11px; color: #4a9fb0; background: #050e1a; border-bottom: 1px solid #0a4060; font-weight: 500; }
+    td { padding: 10px 14px; color: #c0dcea; border-bottom: 1px solid #0a2030; }
+    td.num { font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #0a2030; }
+
+    .badge { display: inline-block; font-size: 11px; padding: 2px 9px; border-radius: 4px; }
+    .badge.g { background: rgba(0,229,160,0.1); color: #00e5a0; border: 1px solid rgba(0,229,160,0.3); }
+    .badge.a { background: rgba(240,165,0,0.1); color: #f0a500; border: 1px solid rgba(240,165,0,0.3); }
+    .badge.r { background: rgba(255,68,102,0.1); color: #ff4466; border: 1px solid rgba(255,68,102,0.3); }
+
+    .footer { font-size: 11px; color: #1a4a5a; text-align: center; margin-top: 14px; padding-top: 12px; border-top: 1px solid #0a2030; }
+    @media (max-width: 600px) {
+      .kpi-grid, .row2 { grid-template-columns: repeat(2, 1fr); }
+      .kpi-value { font-size: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="scanline"></div>
+  <div class="dash">
+    <div class="header">
+      <div>
+        <div class="header-title">비즈니스 대시보드</div>
+        <div class="header-sub pulse">● 시스템 온라인 · 실시간 모니터링</div>
+      </div>
+      <div class="date-nav">
+        <button>◀</button>
+        <span id="cur-date"></span>
+        <button>▶</button>
+      </div>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="kpi-label">평균 마진</div>
+        <div class="kpi-value" style="color:#f0a500">12.7%</div>
+        <div class="kpi-change"><span class="tri-up"></span><span class="up">전월 +1.2%</span></div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">매출</div>
+        <div class="kpi-value" style="color:#0cf">3,892,710</div>
+        <div class="kpi-change"><span class="tri-up"></span><span class="up">전월 +8.4%</span></div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">순이익</div>
+        <div class="kpi-value" style="color:#00e5a0">615,763</div>
+        <div class="kpi-change"><span class="tri-up"></span><span class="up">전월 +5.1%</span></div>
+      </div>
+    </div>
+
+    <div class="row2">
+      <div class="kpi">
+        <div class="kpi-label">광고비</div>
+        <div class="kpi-value" style="color:#ff4466">350,262</div>
+        <div class="kpi-change"><span class="tri-down"></span><span class="down">매출 대비 9.0%</span></div>
+      </div>
+      <div class="status-card">
+        <div class="status-label">재고 상태</div>
+        <div class="status-value">16 <span class="status-unit">품목</span></div>
+        <div class="dot-row">
+          <div class="dot-item"><span class="dot g"></span><span style="color:#00e5a0">여유 14</span></div>
+          <div class="dot-item"><span class="dot a"></span><span style="color:#f0a500">주의 2</span></div>
+        </div>
+      </div>
+      <div class="status-card">
+        <div class="status-label">컨테이너</div>
+        <div class="status-value">91% <span class="status-unit">적재</span></div>
+        <div class="bar-bg"><div class="bar-fill" style="width:91%"></div></div>
+        <div style="font-size:11px;color:#4a9fb0;font-family:'JetBrains Mono',monospace">54.36 / 60 CBM</div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" onclick="showTab('margin',this)">마진 &nbsp;71</div>
+      <div class="tab" onclick="showTab('stock',this)">재고 &nbsp;48</div>
+      <div class="tab" onclick="showTab('order',this)">발주 &nbsp;22</div>
+    </div>
+
+    <div class="table-wrap">
+      <table id="tab-margin">
+        <thead><tr><th style="width:40%">제품명</th><th>매출</th><th>마진율</th><th>상태</th></tr></thead>
+        <tbody>
+          <tr><td>침대 토퍼 1.2</td><td class="num">1,240,000</td><td class="num">15.2%</td><td><span class="badge g">양호</span></td></tr>
+          <tr><td>이불 세트 퀸</td><td class="num">890,000</td><td class="num">11.8%</td><td><span class="badge g">양호</span></td></tr>
+          <tr><td>커튼 암막 2P</td><td class="num">560,000</td><td class="num">8.3%</td><td><span class="badge a">주의</span></td></tr>
+          <tr><td>베개 솜 표준</td><td class="num">420,000</td><td class="num">6.1%</td><td><span class="badge r">위험</span></td></tr>
+          <tr><td>박스 스티커 세트</td><td class="num">320,000</td><td class="num">18.4%</td><td><span class="badge g">양호</span></td></tr>
+        </tbody>
+      </table>
+      <table id="tab-stock" style="display:none">
+        <thead><tr><th style="width:40%">제품명</th><th>현재고</th><th>안전재고</th><th>상태</th></tr></thead>
+        <tbody>
+          <tr><td>침대 토퍼 1.2</td><td class="num">320</td><td class="num">100</td><td><span class="badge g">여유</span></td></tr>
+          <tr><td>이불 세트 퀸</td><td class="num">85</td><td class="num">80</td><td><span class="badge a">주의</span></td></tr>
+          <tr><td>커튼 암막 2P</td><td class="num">210</td><td class="num">50</td><td><span class="badge g">여유</span></td></tr>
+          <tr><td>베개 솜 표준</td><td class="num">12</td><td class="num">50</td><td><span class="badge r">부족</span></td></tr>
+        </tbody>
+      </table>
+      <table id="tab-order" style="display:none">
+        <thead><tr><th style="width:35%">발주번호</th><th style="width:35%">제품명</th><th>수량</th><th>상태</th></tr></thead>
+        <tbody>
+          <tr><td class="num">PO-2026-041</td><td>침대 토퍼 1.2</td><td class="num">500</td><td><span class="badge g">입고완료</span></td></tr>
+          <tr><td class="num">PO-2026-042</td><td>베개 솜 표준</td><td class="num">300</td><td><span class="badge a">배송중</span></td></tr>
+          <tr><td class="num">PO-2026-043</td><td>커튼 암막 2P</td><td class="num">200</td><td><span class="badge r">지연</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="footer">샘플 데이터 · 엑셀 연동 시 자동 업데이트 · v2.1</div>
+  </div>
+
+  <script>
+    document.getElementById('cur-date').textContent = new Date().toISOString().slice(0,10);
+    function showTab(name, el) {
+      ['margin','stock','order'].forEach(t => {
+        document.getElementById('tab-'+t).style.display = t===name ? '' : 'none';
+      });
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+    }
+  </script>
+</body>
+</html>
